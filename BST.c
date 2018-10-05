@@ -1,14 +1,18 @@
 /******************************************************************************
 Binary Search Tree 
 Input Format
-Each line of the input starts with one of six symbols:
+Each line of the input starts with one of the symbols:
 • ‘N’ (stands for new set)
 • ‘+’ (Add element to set)
 • ‘>’ (Find successor)
 • ‘–’ (Delete element)
 • ‘S’ (search within most recent set)
 • ‘P’ (pre-order traversal)
-
+• 'C' print children
+• 'U' print uncle
+• 'B' build BST from preorder traversal
+• 'L' left rotate
+• 'R' Right rotate
 ******************************************************************************/
 
 #include <stdio.h>
