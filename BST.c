@@ -268,6 +268,29 @@ void children(struct node *root, uint64_t x){
 	return;
 }
 
+struct node *uncle(struct node *root, uint64_t x){
+	struct node *x_node = root;
+
+	if(x_node == NULL) return NULL;
+
+	while(x_node != NULL && x_node->n != x){
+		if(x_node != NULL){
+			if(x > x_node->n) x_node = x_node->right;
+			else if(x < x_node->n) x_node = x_node->left;
+		} 
+	} // get node with x 
+
+	if(x_node == NULL) return x_node;
+
+	struct node *temp_p = x_node->parent;
+	if(temp_p == NULL) return temp_p;
+	if(temp_p->parent == NULL) return temp_p->parent;
+	x_node = temp_p; // parent
+	temp_p = temp_p->parent; // grand parent
+	if(temp_p->left == x_node) return temp_p->right;
+	if(temp_p->right == x_node) return temp_p->left;
+}
+
 
 void free_tree(struct node *root){
 	if(root == NULL) return;
@@ -356,6 +379,17 @@ void do_stuff(struct node *root){
 				X = X*10 + (line[j] - '0');
 			}children(tree, X);
 			do_stuff(tree);
+
+		case 'U':
+			for(j=1; j<i; j++){
+				if(line[j] == ' ') continue;
+				X = X*10 + (line[j] - '0');
+			}
+			struct node *uncl = uncle(tree, X);
+			if(uncl != NULL) printf("%lu\n", uncl->n);
+			else printf("-1\n");
+			do_stuff(tree);
+	
 		default: break;
 	}
 
