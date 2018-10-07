@@ -30,8 +30,8 @@ struct node{
 
 // insert a natural number into a Binary Search Tree
 struct node *insert(struct node* root, uint64_t x){
-/*Inputs: pointer to the root node of BST and value to be inserted
-Output: returns pointer to the root node of BST with x inserted*/
+	// Inputs: pointer to the root node of BST and value to be inserted
+	// Output: returns pointer to the root node of BST with x inserted
 	struct node* temp = root;
 	struct node* branch = (struct node*)malloc(sizeof(struct node));
 	// if the tree is empty
@@ -65,30 +65,28 @@ Output: returns pointer to the root node of BST with x inserted*/
 
 // search for an element in a BST
 void search(struct node *root, uint64_t x){
-/*INPUTS: Pointer to the root node of the BST and the element to be searched
-OUTPUTS: Prints a binary string - path from root to node containing x,
--1 in case x is not present in the tree */
+	// INPUTS: Pointer to the root node of the BST and the element to be searched
+	// OUTPUTS: Prints a binary string - path from root to node containing x,
+	// -1 in case x is not present in the tree 
 	struct node *temp = root;
 	int *path = (int*)malloc(sizeof(int)); // array with 0s and 1s
 	int i = 0, j=0;
+	// if x is not present, the temp pointer goes to NULL in the above loop
+	if(temp == NULL){
+		printf("-1\n");
+		return;
+	}
 	// search for the element 
-	while(temp != NULL && temp->n != x){
-		if(temp != NULL){
-			if(x > temp->n){
-				temp = temp->right;
-				path[i] = 1; 
-			}
-			else if(x < temp->n){
-				temp = temp->left;
-				path[i] = 0;
-			}
+	while(temp != NULL && temp->n != x){	
+		if(x > temp->n){
+			temp = temp->right;
+			path[i] = 1; 
 		}
-		i++;
-		// if x is not present, the temp pointer goes to NULL in the above loop
-		if(temp == NULL){
-			printf("-1\n");
-			return;
+		else if(x < temp->n){
+			temp = temp->left;
+			path[i] = 0;
 		}
+		i++;	
 	}
 	// if x is present, print the path
 	for(j=0; j<i; j++) printf("%d", path[j]);
@@ -96,8 +94,8 @@ OUTPUTS: Prints a binary string - path from root to node containing x,
 }
 
 // minimum value in a branch (sub-tree)
-// returns the pointer to the node containing min value in a branch
 struct node *tree_min(struct node* branch){
+	// returns the pointer to the node containing min value in a branch
 	// the left-most leaf is the minimum value
 	while(branch->left !=NULL) branch = branch->left;
 	return branch;
@@ -129,15 +127,16 @@ void InOrder(struct node* root){
 
 // reference CLRS - modified for case, x not in tree
 struct node *successor(struct node* root, uint64_t x){
-
+	// Inputs: pointer to the root node of the tree and 
+	// number for which successor needs to be returned
+	// Returns the pointer to the node with successor of x
+	// NULL if x is the largest or larger than all the elements in the tree
 	struct node *branch = root;
 	// search for x in the tree to see if it is the tree or not
 	struct node *x_node = root;
 	while(x_node != NULL && x_node->n != x){
-		if(x_node != NULL){
-			if(x > x_node->n) x_node = x_node->right;
-			else if(x < x_node->n) x_node = x_node->left;
-		}
+		if(x > x_node->n) x_node = x_node->right;
+		else if(x < x_node->n) x_node = x_node->left;
 	} // after the loop, x_node becomes the pointer to the node with x
 	// otherwise, x_node points to NULL
 	// x is inserted at the leaf node if not present in the tree  
@@ -154,7 +153,7 @@ struct node *successor(struct node* root, uint64_t x){
 	if(x_node == NULL) temp_x = branch; // to delete the inserted x later
 
 	// if the right sub-tree is not NULL,
-	// successor is the left-most value in the right sub-tree (min value in right sub-tree)
+	// successor is the left-most value (min value) in the right sub-tree 
 	if(branch->right != NULL) return tree_min(branch->right);
 
 	// if right sub-tree is NULL
@@ -181,9 +180,8 @@ struct node *successor(struct node* root, uint64_t x){
 
 // Function to delete x from a BST
 struct node *delete(struct node *root, uint64_t x){
-/*INPUTS: pointer to the root node of the tree and 
-the element to be deleted x
-OUTPUT: returns the root pointer of the tree with x deleted*/
+	// INPUTS: pointer to the root node of the tree and the element to be deleted x
+	// OUTPUT: returns the root pointer of the tree with x deleted
 	struct node *temp = root;
 	// trivial case
 	if(temp == NULL) return root; // if the root is NULL, nothing to delete
@@ -238,7 +236,6 @@ OUTPUT: returns the root pointer of the tree with x deleted*/
 		}
 		return temp;
 	}
-
 	// case 2: the node has two children
 	else{
 		// replace the node with it's successor and splice the successor
@@ -250,12 +247,40 @@ OUTPUT: returns the root pointer of the tree with x deleted*/
 	}
 }
 
+void children(struct node *root, uint64_t x){
+	struct node *temp = root;
+	while(temp != NULL && temp->n != x){
+		if(x > temp->n) temp = temp->right;
+		else if(x < temp->n) temp = temp->left;
+	}
 
-struct node *tree = NULL; // Pointer to root of the tree
+	if(temp == NULL){
+		printf("-1\n");
+		return;
+	}
+
+	if(temp->left == NULL) printf("Nil ");
+	else printf("%lu ", temp->left->n);
+
+	if(temp->right == NULL) printf("Nil\n");
+	else printf("%lu\n", temp->right->n);
+
+	return;
+}
+
+
+void free_tree(struct node *root){
+	if(root == NULL) return;
+	free_tree(root->left);
+	free_tree(root->right);
+	free(root);
+}
+
+
 
 // handle inputs and outputs
-void do_stuff(){
-	// struct node *tree = NULL;
+void do_stuff(struct node *root){
+	struct node *tree = root;
 	char c, num;
 	char *line = (char*)malloc(sizeof(char));
 	int i=0, j=0;
@@ -267,6 +292,7 @@ void do_stuff(){
 	// do_stuff();
 	switch(line[0]){
 		case 'N':
+			free_tree(tree);
 			tree = NULL;
 			for(j=1; j<i; j++){
 				if(line[j] == ' '){
@@ -276,7 +302,7 @@ void do_stuff(){
 				else a = 10*a + (line[j] - '0');
 			}
 			if(a!=0)tree = insert(tree, a);
-			do_stuff(); // recursively call for each line
+			do_stuff(tree); // recursively call for each line
 			break;
 
 		case 'S':
@@ -284,15 +310,15 @@ void do_stuff(){
 				if(line[j] == ' ') continue;
 				X = X*10 + (line[j] - '0');
 			}
-			search(tree, X);
-			printf("\n");
-			do_stuff();
+			search(tree, X)
+		;	printf("\n");
+			do_stuff(tree);
 			break;
 
 		case 'P':
 			PreOrder(tree);
 			printf("\n");
-			do_stuff();
+			do_stuff(tree);
 			break;
 
 		case '+':
@@ -301,7 +327,7 @@ void do_stuff(){
 				X = X*10 + (line[j] - '0');
 			}
 			tree = insert(tree, X);
-			do_stuff();
+			do_stuff(tree);
 			break;
 
 		case '>':
@@ -312,7 +338,7 @@ void do_stuff(){
 			struct node *succ = successor(tree, X);
 			if(succ != NULL) printf("%lu\n", succ->n);
 			else printf("-1\n");
-			do_stuff();
+			do_stuff(tree);
 			break;
 
 		case '-':
@@ -321,8 +347,15 @@ void do_stuff(){
 				X = X*10 + (line[j] - '0');
 			}
 			tree = delete(tree, X);
-			do_stuff();
+			do_stuff(tree);
 			break;
+
+		case 'C':
+			for(j=1; j<i; j++){
+				if(line[j] == ' ') continue;
+				X = X*10 + (line[j] - '0');
+			}children(tree, X);
+			do_stuff(tree);
 		default: break;
 	}
 
@@ -330,6 +363,7 @@ void do_stuff(){
 }
 
 int main(){
-	do_stuff();
+	struct node *TREE;
+	do_stuff(TREE);
 	return 0;
 }
