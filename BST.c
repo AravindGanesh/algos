@@ -188,10 +188,8 @@ struct node *delete(struct node *root, uint64_t x){
 
 	struct node *x_node = root; 
 	while(x_node != NULL && x_node->n != x){
-		if(x_node != NULL){
-			if(x > x_node->n) x_node = x_node->right;
-			else if(x < x_node->n) x_node = x_node->left;
-		} 
+		if(x > x_node->n) x_node = x_node->right;
+		else if(x < x_node->n) x_node = x_node->left;
 	} // get node with x 
 
 	if(x_node == NULL) return root;
@@ -291,19 +289,44 @@ struct node *uncle(struct node *root, uint64_t x){
 	if(temp_p->right == x_node) return temp_p->left;
 }
 
+void left_rotate(struct node *root, uint64_t x){
+	struct node *x_node = root;
+
+	// if(x_node == NULL) return;
+
+	while(x_node != NULL && x_node->n != x){
+		if(x > x_node->n) x_node = x_node->right;
+		else if(x < x_node->n) x_node = x_node->left;
+	} // get node with x 
+
+	if(x_node == NULL) return;
+
+	struct node *y = x_node->right;
+	x_node->right = y->left;
+	if(y->left != NULL) y->left->parent = x_node;
+	y->parent = x_node->parent;
+	if(x_node->parent == NULL) root = y;
+	else if(x_node == x_node->parent->left) x_node->parent->left = y;
+	else x_node->parent->right = y;
+	y->left = x_node;
+	x_node->parent = y;
+	return;
+}
 
 void free_tree(struct node *root){
 	if(root == NULL) return;
 	free_tree(root->left);
 	free_tree(root->right);
 	free(root);
+	root = NULL;
+	return;
 }
 
 
 
 // handle inputs and outputs
-void do_stuff(struct node *root){
-	struct node *tree = root;
+void do_stuff(struct node *tree){
+	// struct node *tree = root;
 	char c, num;
 	char *line = (char*)malloc(sizeof(char));
 	int i=0, j=0;
@@ -389,7 +412,13 @@ void do_stuff(struct node *root){
 			if(uncl != NULL) printf("%lu\n", uncl->n);
 			else printf("-1\n");
 			do_stuff(tree);
-	
+		case 'L':
+			for(j=1; j<i; j++){
+				if(line[j] == ' ') continue;
+				X = X*10 + (line[j] - '0');
+			}printf("read x, rotating\n");
+			left_rotate(tree, X);
+			do_stuff(tree);
 		default: break;
 	}
 
@@ -401,3 +430,11 @@ int main(){
 	do_stuff(TREE);
 	return 0;
 }
+
+
+
+/******************************************************************************
+Useful test cases
+N 7 4 11 6 9 18 3 2 14 19 12 17 22 20
+
+******************************************************************************/
