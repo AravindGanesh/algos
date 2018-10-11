@@ -291,53 +291,53 @@ struct node *uncle(struct node *root, uint64_t x){
 }
 
 //function to left rotate tree at x
-void left_rotate(struct node *root, uint64_t x){
+struct node *left_rotate(struct node *root, uint64_t x){
 	// INPUTS: root pointer of the tree and element x
-	struct node *x_node = root;
+	struct node *x_node = root, *temp = root;
 	// go to node containing x
 	while(x_node != NULL && x_node->n != x){
 		if(x > x_node->n) x_node = x_node->right;
 		else if(x < x_node->n) x_node = x_node->left;
 	} // get node with x 
 	// if x is not in the tree
-	if(x_node == NULL) return;
+	if(x_node == NULL) return temp;
 	// reference: CLRS 
-	struct node *y = x_node->right;
-	if(x_node->right == NULL) return;
+	struct node *y = x_node->right; //right child
+	if(x_node->right == NULL) return temp; 
 	x_node->right = y->left; 
-	if(y->left != NULL) y->left->parent = x_node; 
-	y->parent = x_node->parent;
-	if(x_node->parent == NULL) root = y;
+	if(y->left != NULL) y->left->parent = x_node; //updating child's parent
+	y->parent = x_node->parent; //updating y's parent 
+	if(x_node->parent == NULL) temp = y;  //updating root 
 	else if(x_node == x_node->parent->left) x_node->parent->left = y;
 	else x_node->parent->right = y;
-	y->left = x_node;
+	y->left = x_node; //x is left child of y after rotation
 	x_node->parent = y;
-	return;
+	return temp;
 }
 
 //function to right rotate tree at x
-void right_rotate(struct node *root, uint64_t x){
+struct node *right_rotate(struct node *root, uint64_t x){
 	// INPUTS: root pointer of the tree and element x
-	struct node *x_node = root;
+	struct node *x_node = root, *temp = root;
 	// go to node containing x
 	while(x_node != NULL && x_node->n != x){
-		if(x > x_node->n) x_node = x_node->left;
-		else if(x < x_node->n) x_node = x_node->right;
+		if(x > x_node->n) x_node = x_node->right;
+		else if(x < x_node->n) x_node = x_node->left;
 	} // get node with x 
 	// if x is not in the tree, return
-	if(x_node == NULL) return;
+	if(x_node == NULL) return temp;
 	// reference: CLRS, symmetric to left_rotate()
 	struct node *y = x_node->left;
-	if(x_node->left == NULL) return;
+	if(x_node->left == NULL) return temp;
 	x_node->left = y->right;
 	if(y->right != NULL) y->right->parent = x_node;
 	y->parent = x_node->parent;
-	if(x_node->parent == NULL) root = y;
+	if(x_node->parent == NULL) temp = y;
 	else if(x_node == x_node->parent->right) x_node->parent->right = y;
 	else x_node->parent->left = y;
 	y->right = x_node;
 	x_node->parent = y;
-	return;
+	return temp;
 }
 
 // function to free a bst 
@@ -422,11 +422,11 @@ int main(){
 					break;
 				
 				case 'L':
-					left_rotate(tree, X);
+					tree = left_rotate(tree, X);
 					break;
 
 				case 'R':
-					right_rotate(tree, X);
+					tree = right_rotate(tree, X);
 					break;
 
 				default: break;
