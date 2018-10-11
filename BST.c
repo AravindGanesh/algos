@@ -301,7 +301,6 @@ void left_rotate(struct node *root, uint64_t x){
 	} // get node with x 
 	// if x is not in the tree
 	if(x_node == NULL) return;
-	printf("%lu\n", x_node->n);
 	// reference: CLRS 
 	struct node *y = x_node->right;
 	if(x_node->right == NULL) return;
