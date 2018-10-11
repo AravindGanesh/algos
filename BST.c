@@ -247,45 +247,48 @@ struct node *delete(struct node *root, uint64_t x){
 }
 
 void children(struct node *root, uint64_t x){
+	// INPUTS: pointer to root node and x value
 	struct node *temp = root;
+	// get node containing x
 	while(temp != NULL && temp->n != x){
 		if(x > temp->n) temp = temp->right;
 		else if(x < temp->n) temp = temp->left;
-	}
+	} // temp is node with x
 
-	if(temp == NULL){
-		printf("-1\n");
+	if(temp == NULL){ // if x is not present in tree
+		printf("-1\n"); 
 		return;
 	}
 
-	if(temp->left == NULL) printf("Nil ");
+	if(temp->left == NULL) printf("Nil "); // if x has no left child
 	else printf("%lu ", temp->left->n);
 
-	if(temp->right == NULL) printf("Nil\n");
+	if(temp->right == NULL) printf("Nil\n"); // if x has no right child
 	else printf("%lu\n", temp->right->n);
 
 	return;
 }
 
 struct node *uncle(struct node *root, uint64_t x){
+	// INPUTS: root pointer and x value
+	// OUTPUT: pointer to node with uncle, NULL if no uncle
 	struct node *x_node = root;
 
-	if(x_node == NULL) return NULL;
-
+	if(x_node == NULL) return NULL; // if the tree is empty
+	// get node containing x
 	while(x_node != NULL && x_node->n != x){
-		if(x_node != NULL){
-			if(x > x_node->n) x_node = x_node->right;
-			else if(x < x_node->n) x_node = x_node->left;
-		} 
+		if(x > x_node->n) x_node = x_node->right;
+		else if(x < x_node->n) x_node = x_node->left;
 	} // get node with x 
 
-	if(x_node == NULL) return x_node;
+	if(x_node == NULL) return x_node; // if x is not present in the tree
 
 	struct node *temp_p = x_node->parent;
-	if(temp_p == NULL) return temp_p;
-	if(temp_p->parent == NULL) return temp_p->parent;
+	if(temp_p == NULL) return temp_p; // if x has no parent, no uncle
+	if(temp_p->parent == NULL) return temp_p->parent; // if no grandparent
 	x_node = temp_p; // parent
-	temp_p = temp_p->parent; // grand parent
+	temp_p = temp_p->parent; // grandparent
+	// return sibling of parent
 	if(temp_p->left == x_node) return temp_p->right;
 	if(temp_p->right == x_node) return temp_p->left;
 }
