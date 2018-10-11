@@ -71,11 +71,6 @@ void search(struct node *root, uint64_t x){
 	struct node *temp = root;
 	int *path = (int*)malloc(sizeof(int)); // array with 0s and 1s
 	int i = 0, j=0;
-	// if x is not present, the temp pointer goes to NULL in the above loop
-	if(temp == NULL){
-		printf("-1\n");
-		return;
-	}
 	// search for the element 
 	while(temp != NULL && temp->n != x){	
 		if(x > temp->n){
@@ -88,8 +83,14 @@ void search(struct node *root, uint64_t x){
 		}
 		i++;	
 	}
+	// if x is not present, the temp pointer goes to NULL in the above loop
+	if(temp == NULL){
+		printf("-1\n");
+		return;
+	}
 	// if x is present, print the path
 	for(j=0; j<i; j++) printf("%d", path[j]);
+	printf("\n");
 	return;	
 }
 
@@ -314,120 +315,96 @@ void left_rotate(struct node *root, uint64_t x){
 }
 
 void free_tree(struct node *root){
-	if(root == NULL) return;
-	free_tree(root->left);
-	free_tree(root->right);
-	free(root);
-	root = NULL;
-	return;
+	if(root != NULL){
+		free_tree(root->left);
+		free_tree(root->right);
+		free(root);
+	}root = NULL;
 }
 
-
-
-// handle inputs and outputs
-void do_stuff(struct node *tree){
-	// struct node *tree = root;
-	char c, num;
-	char *line = (char*)malloc(sizeof(char));
-	int i=0, j=0;
-	for(i=0; (c=fgetc(stdin))!='\n'; i++) line[i] = c;
-	uint64_t a=0;
-	uint64_t X=0;
-
-	// printf("%s\n", line);
-	// do_stuff();
-	switch(line[0]){
-		case 'N':
-			free_tree(tree);
-			tree = NULL;
-			for(j=1; j<i; j++){
-				if(line[j] == ' '){
-					if(a!=0) tree = insert(tree, a);
-					a = 0; // since only natural numbers are used
-				}
-				else a = 10*a + (line[j] - '0');
-			}
-			if(a!=0)tree = insert(tree, a);
-			do_stuff(tree); // recursively call for each line
-			break;
-
-		case 'S':
-			for(j=1; j<i; j++){
-				if(line[j] == ' ') continue;
-				X = X*10 + (line[j] - '0');
-			}
-			search(tree, X)
-		;	printf("\n");
-			do_stuff(tree);
-			break;
-
-		case 'P':
-			PreOrder(tree);
-			printf("\n");
-			do_stuff(tree);
-			break;
-
-		case '+':
-			for(j=1; j<i; j++){
-				if(line[j] == ' ') continue;
-				X = X*10 + (line[j] - '0');
-			}
-			tree = insert(tree, X);
-			do_stuff(tree);
-			break;
-
-		case '>':
-			for(j=1; j<i; j++){
-				if(line[j] == ' ') continue;
-				X = X*10 + (line[j] - '0');
-			}
-			struct node *succ = successor(tree, X);
-			if(succ != NULL) printf("%lu\n", succ->n);
-			else printf("-1\n");
-			do_stuff(tree);
-			break;
-
-		case '-':
-			for(j=1; j<i; j++){
-				if(line[j] == ' ') continue;
-				X = X*10 + (line[j] - '0');
-			}
-			tree = delete(tree, X);
-			do_stuff(tree);
-			break;
-
-		case 'C':
-			for(j=1; j<i; j++){
-				if(line[j] == ' ') continue;
-				X = X*10 + (line[j] - '0');
-			}children(tree, X);
-			do_stuff(tree);
-
-		case 'U':
-			for(j=1; j<i; j++){
-				if(line[j] == ' ') continue;
-				X = X*10 + (line[j] - '0');
-			}
-			struct node *uncl = uncle(tree, X);
-			if(uncl != NULL) printf("%lu\n", uncl->n);
-			else printf("-1\n");
-			do_stuff(tree);
-		case 'L':
-			for(j=1; j<i; j++){
-				if(line[j] == ' ') continue;
-				X = X*10 + (line[j] - '0');
-			}printf("read x, rotating\n");
-			left_rotate(tree, X);
-			do_stuff(tree);
-		default: break;
-	}
-
-
-}
 
 int main(){
-	struct node *TREE;
-	do_stuff(TREE);
+
+	char d, option; 
+	int i=0, j=0;
+	uint64_t X=0;
+	struct node *tree = NULL, *temp = NULL;
+	while((d=fgetc(stdin))!=EOF){
+
+		if(d == 'N') 	  option = 'N';
+		else if(d == 'B') option = 'B';
+		else if(d == '+') option = '+';
+		else if(d == '>') option = '>';
+		else if(d == '-') option = '-';
+		else if(d == 'S') option = 'S';
+		else if(d == 'P') option = 'P';
+		else if(d == 'C') option = 'C';
+		else if(d == 'U') option = 'U';
+		else if(d == 'L') option = 'L';
+		else if(d == 'R') option = 'R';
+
+		else if(d == ' '){
+			if(option == 'N'){
+				if(X!=0) tree = insert(tree, X);
+				X = 0; // since only natural numbers are used
+			}
+		}
+		else if(d == '\n'){
+			switch(option){
+				case 'N':
+				case 'B':
+					if(X!=0) tree = insert(tree, X);
+					break;
+
+				case 'S':
+					search(tree, X);
+					break;
+
+				case 'P':
+					PreOrder(tree);
+					printf("\n");
+					break;
+
+				case '+':
+					tree = insert(tree, X);
+					break;
+
+				case '>':
+					temp = successor(tree, X);
+					if(temp != NULL) printf("%lu\n", temp->n);
+					else printf("-1\n");
+					temp = NULL;
+					break;
+
+				case '-':
+					tree = delete(tree, X);
+					break;
+
+				case 'C':
+					children(tree, X);
+					break;
+				
+				case 'U':
+					temp = uncle(tree, X);
+					if(temp != NULL) printf("%lu\n", temp->n);
+					else printf("-1\n");
+					temp = NULL;
+					break;
+				
+				case 'L':
+					left_rotate(tree, X);
+					break;
+
+				default: break;
+			}
+			X = 0;
+		}
+
+
+		else{
+			 X = 10*X + (d - '0');
+		}
+	}
 	return 0;
 }
 
@@ -436,5 +413,5 @@ int main(){
 /******************************************************************************
 Useful test cases
 N 7 4 11 6 9 18 3 2 14 19 12 17 22 20
-
+B 7 4 3 2 6 11 9 18 14 12 17 19 22 20
 ******************************************************************************/
