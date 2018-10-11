@@ -3,11 +3,11 @@ Binary Search Tree
 Input Format
 Each line of the input starts with one of the symbols:
 • ‘N’ (stands for new set)
+• ‘S’ (search within most recent set)
+• ‘P’ (pre-order traversal)
 • ‘+’ (Add element to set)
 • ‘>’ (Find successor)
 • ‘–’ (Delete element)
-• ‘S’ (search within most recent set)
-• ‘P’ (pre-order traversal)
 • 'C' print children
 • 'U' print uncle
 • 'B' build BST from preorder traversal
@@ -107,7 +107,7 @@ void PreOrder(struct node* root){
 	struct node* temp= root;
 
 	if(temp == NULL) return;
-	
+	// print the root and call preorder on each subtree
 	printf("%lu ", temp->n);
 	PreOrder(temp->left);
 	PreOrder(temp->right);
@@ -290,21 +290,23 @@ struct node *uncle(struct node *root, uint64_t x){
 	if(temp_p->right == x_node) return temp_p->left;
 }
 
+//function to left rotate tree at x
 void left_rotate(struct node *root, uint64_t x){
+	// INPUTS: root pointer of the tree and element x
 	struct node *x_node = root;
-
-	// if(x_node == NULL) return;
-
+	// go to node containing x
 	while(x_node != NULL && x_node->n != x){
 		if(x > x_node->n) x_node = x_node->right;
 		else if(x < x_node->n) x_node = x_node->left;
 	} // get node with x 
-
+	// if x is not in the tree
 	if(x_node == NULL) return;
-
+	printf("%lu\n", x_node->n);
+	// reference: CLRS 
 	struct node *y = x_node->right;
-	x_node->right = y->left;
-	if(y->left != NULL) y->left->parent = x_node;
+	if(x_node->right == NULL) return;
+	x_node->right = y->left; 
+	if(y->left != NULL) y->left->parent = x_node; 
 	y->parent = x_node->parent;
 	if(x_node->parent == NULL) root = y;
 	else if(x_node == x_node->parent->left) x_node->parent->left = y;
@@ -314,6 +316,32 @@ void left_rotate(struct node *root, uint64_t x){
 	return;
 }
 
+//function to right rotate tree at x
+void right_rotate(struct node *root, uint64_t x){
+	// INPUTS: root pointer of the tree and element x
+	struct node *x_node = root;
+	// go to node containing x
+	while(x_node != NULL && x_node->n != x){
+		if(x > x_node->n) x_node = x_node->left;
+		else if(x < x_node->n) x_node = x_node->right;
+	} // get node with x 
+	// if x is not in the tree, return
+	if(x_node == NULL) return;
+	// reference: CLRS, symmetric to left_rotate()
+	struct node *y = x_node->left;
+	if(x_node->left == NULL) return;
+	x_node->left = y->right;
+	if(y->right != NULL) y->right->parent = x_node;
+	y->parent = x_node->parent;
+	if(x_node->parent == NULL) root = y;
+	else if(x_node == x_node->parent->right) x_node->parent->right = y;
+	else x_node->parent->left = y;
+	y->right = x_node;
+	x_node->parent = y;
+	return;
+}
+
+// function to free a bst 
 void free_tree(struct node *root){
 	if(root != NULL){
 		free_tree(root->left);
@@ -330,9 +358,13 @@ int main(){
 	uint64_t X=0;
 	struct node *tree = NULL, *temp = NULL;
 	while((d=fgetc(stdin))!=EOF){
-
-		if(d == 'N') 	  option = 'N';
-		else if(d == 'B') option = 'B';
+		// assuming that the given list is valid preorder traversal
+		if(d == 'N' || d == 'B'){
+			option = 'N';
+			free_tree(tree);
+			tree = NULL;
+		}
+		// else if(d == 'B') option = 'B';
 		else if(d == '+') option = '+';
 		else if(d == '>') option = '>';
 		else if(d == '-') option = '-';
@@ -352,7 +384,6 @@ int main(){
 		else if(d == '\n'){
 			switch(option){
 				case 'N':
-				case 'B':
 					if(X!=0) tree = insert(tree, X);
 					break;
 
@@ -366,7 +397,7 @@ int main(){
 					break;
 
 				case '+':
-					tree = insert(tree, X);
+					if(X!=0)tree = insert(tree, X); // only natural numbers
 					break;
 
 				case '>':
@@ -395,11 +426,14 @@ int main(){
 					left_rotate(tree, X);
 					break;
 
+				case 'R':
+					right_rotate(tree, X);
+					break;
+
 				default: break;
 			}
 			X = 0;
 		}
-
 
 		else{
 			 X = 10*X + (d - '0');
