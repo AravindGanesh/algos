@@ -25,11 +25,6 @@ All output lines have to end with a ‘\n’ character.
 #include <stdlib.h>
 
 //
-struct priorityQ{
-	unsigned int v, pi, d;
-};
-
-//
 struct list{
 	unsigned int v, w;
 	struct list *next;
@@ -40,7 +35,12 @@ struct graph{ // an array of this struct will represent my graph
 	struct list *adjList; 
 };
 
-// function to swap two numbers
+// node of a priority Queue with vertex, parent and distance (in Dijkstra traversal)
+struct priorityQ{
+	unsigned int v, pi, d;
+};
+
+// function to swap two nodes of a priority Queue
 void swap(struct priorityQ *a, struct priorityQ *b){
 	struct priorityQ temp = *a;
 	*a = *b;
@@ -48,8 +48,9 @@ void swap(struct priorityQ *a, struct priorityQ *b){
 }
 
 // reference: CLRS
+// function to make the array to a min-heap (w.r.t distances)
 void HEAPIFY(int n, struct priorityQ *heap, int i){
-	int left_i = 2*i + 1, right_i = 2*i + 2, min_i = i;
+	int left_i = (2*i)+1, right_i = (2*i)+2, min_i = i;
 	
 	if((left_i < n) && (heap[left_i].d < heap[min_i].d)) min_i = left_i;
 	
@@ -61,48 +62,51 @@ void HEAPIFY(int n, struct priorityQ *heap, int i){
 	}
 }
 
-// 
-unsigned int extract_min(int n, struct priorityQ *heap){
-	if(n==0) return -1;
-	int minVal = heap[0];
-	heap[0] = heap[n-1];
+// remove and returns node withmin d value from min-heap
+struct priorityQ extract_min(int n, struct priorityQ *heap){
+	struct priorityQ min;
+	min.d = heap[0].d;
+	min.v = heap[0].v;
+	min.pi = heap[0].pi;
+	heap[0].d = heap[n-1].d;
+	heap[0].v = heap[n-1].v;
+	heap[0].pi = heap[n-1].pi;
 	n--;
 	HEAPIFY(n, heap, 0);
-	return minVal;
+	return min;
 }
 
-// 
+// decrease the distance of vertex v to value key  
 void decrease_key(int n, struct priorityQ *heap, int i, unsigned int key){
-	heap[i] = key;
-	for(; i!=0 && heap[i].d < heap[(i-1)/2].d; i=(i-1)/2){
+	heap[i].d = key;
+	// restore min-heap property to the array
+	for(i; i && heap[i].d < heap[(i-1)/2].d; i=(i-1)/2){
 		swap(&heap[i], &heap[(i-1)/2]);
 	}
 }
 
 // insert an element at the end to an adjacency list
-struct list *adjInsert(struct list *adjListHead, int v){
+struct list *adjInsert(struct list *head, unsigned int v, unsigned int w){
 	struct list *node = (struct list*)malloc(sizeof(struct list));
-	struct list *temp = adjListHead;
+	struct list *temp = head;
 	node->v = v;
+	node->w = w;
 	node->next = NULL;
 
 	if(temp == NULL) return node;
 	while(temp->next != NULL) temp = temp->next;
 	temp->next = node;
-	return adjListHead;
+	return head;
 }
 
 // 
-unsigned int weight(int n, struct list **Graph, unsigned int u, unsigned int v){
-	struct list *adju;
+unsigned int weight(struct graph *G, int n, unsigned int u, unsigned int v){
+	struct list *adju = NULL;
 	int i;
-	for(i=0; i<n; i++){
-		if(Graph[i]->v == u){
-			adju = Graph[i];
-			break;
-		}
-	}
-	for(adju = adju->next;(adju != NULL); adju = adju->next){
+	adju = G[u-1].adjList;
+	if(adju->next == NULL)return -1;
+
+	for(adju=adju->next;(adju != NULL); adju = adju->next){
 		if(adju->v == v) break;
 	}
 
@@ -116,7 +120,7 @@ For all u ∈ V , d[u] ← ∞, π[u] ← NIL
 d[s] ← 0
 Initialize min-priority queue Q ← V
 S ←∅
-while Q 6 = ∅ do
+while Q != ∅ do
 u ← Extract-Min(Q)
 S ← S ∪ {u}
 	for each v ∈ N (u) do
@@ -130,19 +134,53 @@ end while
 ******************************************************************************/
 
 //
-void Dijkstra(struct graph *G, int n, unsigned int s, struct priorityQ *Q){
-	int i=0;
+void Dijkstra(struct graph *G, int n, unsigned int s){
+	int i=0,j=0, m=n;
+	unsigned int distances[n];
+	unsigned int u, v, d;
+	struct priorityQ *Q = (struct priorityQ*)malloc(n*sizeof(struct priorityQ));
+	struct priorityQ qnode;
+	struct list *adju = NULL;
+	// intialize priority Q; set distances to ∞ and parents to 0
 	for(i=0; i<n; i++){
 		Q[i].d = -1;
 		Q[i].pi = 0;
-		Q[i].v = i+1;
+		Q[i].v = i+1; // vertcies are stored in ascending order in Q nodes
+		distances[i] = -1;
 	}
-	
-
+	distances[s-1] = 0;
+	decrease_key(n, Q, s-1, 0);
+	// for(i=0; i<n; i++) printf(" x %d %d x ",Q[i].v, Q[i].d);
+	for(m=n; m>0; m--){
+		qnode = extract_min(m, Q);
+		u = qnode.v;
+		printf("%d %d\n",qnode.v, qnode.d);
+/*		for(j=0; j<n; j++){
+			if(G[j].adjList->v == u){
+				adju = G[j].adjList;
+				break;
+			}
+		}*/
+		adju = G[u-1].adjList;
+		for(adju = adju->next; adju!=NULL; adju = adju->next){
+			v = adju->v;
+			for(j=0; j<n; j++){
+				if(Q[j].v == v){
+					d = Q[j].d;
+					break;
+				}
+			}
+			if(qnode.d + adju->w < d){
+				d = qnode.d + adju->w;
+				decrease_key(m, Q, j, d);
+				Q[j].pi = u;
+			}
+		}
+	}
 }
 
 // function to free list after each line
-void FreeList(struct list* head){
+void FreeList(struct list *head){
 	struct list* temp;
 	while(head!=NULL){
 		temp = head;
@@ -152,25 +190,32 @@ void FreeList(struct list* head){
 }
 
 //
-void free_graph(int n, struct list **graph){
+void free_graph(int n, struct graph *G){
 	int i=0;
-	for(i=0; i<n; i++) FreeList(graph[i]);
+	for(i=0; i<n; i++) FreeList(G[i].adjList);
 	return;
+}
+
+void printAdjList(struct list *head){
+	struct list *temp = head;
+	for(;temp!=NULL; temp=temp->next){
+		printf(" v=%d, w=%d ", temp->v, temp->w);
+	}printf("\n");
 }
 
 int main(){
 
 	char d, option; 
-	int i,V_size, V_idx=0, a, u=0, v=0;
-	struct list **Graph;
-	int *pis;
+	int i,V_size, flag=0, V_idx;
+	unsigned int u=0, v=0, w=0, a=0;
+	struct graph *G=NULL;
+	// struct priorityQ *Q;
 	// struct node *tree = NULL, *temp = NULL;
 	while((d=fgetc(stdin))!=EOF){
 		// assuming that the given list is valid preorder traversal
 		if(d == 'N'){
 			option = 'N';
-			V_idx = 0;
-			free_graph(V_size,Graph);
+			if(G!=NULL)free_graph(V_size,G);
 		}
 		// else if(d == 'B') option = 'B';
 		else if(d == 'E') option = 'E';
@@ -181,9 +226,20 @@ int main(){
 		else if(d == ' '){
 			if(option == 'E'){
 				if(a!=0){
-					Graph[V_idx] = adjInsert(Graph[V_idx], a);
-				}
-				a = 0; // since only natural numbers are used
+					if(flag==0){
+						V_idx = a-1;
+						flag = 1; a=0;
+						continue;
+					}
+					
+					if(v==0) v = a;
+					else if(v!=0 && w==0) w = a;
+
+					if(v!=0 && w!=0){
+						G[v-1].adjList = adjInsert(G[V_idx].adjList, v, w);
+						v=0; w=0;
+					}
+				}a = 0; // since only natural numbers are used
 			}
 			else if((option == '?') || (option == 'P')){
 				if(u==0 && a!=0) u = a;
@@ -195,41 +251,40 @@ int main(){
 			switch(option){
 				case 'N':
 					V_size = a;
-					Graph = (struct list**)malloc((V_size)*sizeof(struct list*));
-					for(i=0; i<V_size; i++) Graph[i] = NULL; 
-					pis = (int*)malloc((V_size+1)*sizeof(int));
+					G = (struct graph*)malloc(V_size*sizeof(struct graph));
+					for(i=0; i<V_size; i++){
+						G[i].adjList = adjInsert(G[i].adjList, i+1, 0);
+					}
+					// Q = (struct priorityQ*)malloc(V_size*sizeof(struct priorityQ));
 					break;
 
 				case 'E':
-					if(a!=0) Graph[V_idx] = adjInsert(Graph[V_idx], a);
-					// printAdjList(Graph[V_idx]);
-					V_idx++;
+					printf("%d, %d\n",V_idx, flag);
+					if(v==0) v = a;
+					else if(v!=0 && w==0) w = a;
+					if(v!=0 && w!=0) G[V_idx].adjList = adjInsert(G[V_idx].adjList, v, w);
+					flag = 0;
+					printAdjList(G[V_idx].adjList);
 					break;
 
 				case '?':
 					if(a!=0) v = a;
-					printf("%d\n", isEdge(V_size, Graph, u, v));
+					printf("%d\n", weight(G, V_size, u, v));
 					u=0; v=0;
 					break;
 
 				case 'P':
 					if(a!=0) v = a;
-					if(pis[0]!=u){
-						for(i=0; i<=V_size; i++) pis[i]=0;
-						BFS(V_size, Graph, u, pis, 1);
-					}
-					shortestPath(pis, v);
-					printf("\n");
+					printf("P %d blah\n",v);
 					break;
 
-				case 'B':
-					BFS(V_size, Graph, a, pis, 0);
-					printf("\n");
+				case 'D':
+					Dijkstra(G, V_size, a);
 					break;
 
 				default: break;
 			}
-			a = 0;
+			a=0; v=0; u=0; w=0; flag=0;
 		}
 
 		else{
