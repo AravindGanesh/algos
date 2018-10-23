@@ -21,6 +21,7 @@ v followed by a shortest path from u to v as a space-separated list of vertices 
 with u.
 All output lines have to end with a ‘\n’ character.
 ******************************************************************************/
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -114,26 +115,7 @@ unsigned int weight(struct graph *G, int n, unsigned int u, unsigned int v){
 	else return adju->w;
 }
 
-/******************************************************************************
-// From Lecture Slides
-For all u ∈ V , d[u] ← ∞, π[u] ← NIL
-d[s] ← 0
-Initialize min-priority queue Q ← V
-S ←∅
-while Q != ∅ do
-u ← Extract-Min(Q)
-S ← S ∪ {u}
-	for each v ∈ N (u) do
-		if d[u] + w(u, v) < d[v] then
-			d[v] ← d[u] + w(u, v)
-			DECREASE-KEY(v, d[v]).
-			π[v] ← u
-		end if
-	end for
-end while
-******************************************************************************/
-
-//
+// function prints Dijkstra traversal from source s
 void Dijkstra(struct graph *G, int n, unsigned int s){
 	int i=0,j=0, m=n;
 	unsigned int distances[n];
@@ -155,16 +137,10 @@ void Dijkstra(struct graph *G, int n, unsigned int s){
 		qnode = extract_min(m, Q);
 		u = qnode.v;
 		printf("%d %d\n",qnode.v, qnode.d);
-/*		for(j=0; j<n; j++){
-			if(G[j].adjList->v == u){
-				adju = G[j].adjList;
-				break;
-			}
-		}*/
 		adju = G[u-1].adjList;
 		for(adju = adju->next; adju!=NULL; adju = adju->next){
 			v = adju->v;
-			for(j=0; j<n; j++){
+			for(j=0; j<m-1; j++){
 				if(Q[j].v == v){
 					d = Q[j].d;
 					break;
@@ -172,11 +148,16 @@ void Dijkstra(struct graph *G, int n, unsigned int s){
 			}
 			if(qnode.d + adju->w < d){
 				d = qnode.d + adju->w;
-				decrease_key(m, Q, j, d);
+				decrease_key(m-1, Q, j, d);
 				Q[j].pi = u;
 			}
 		}
 	}
+}
+
+// 
+void shortest_path(struct graph *G, int n, unsigned int src, unsigned int dest){
+
 }
 
 // function to free list after each line
@@ -191,33 +172,32 @@ void FreeList(struct list *head){
 
 //
 void free_graph(int n, struct graph *G){
+	if(G==NULL)return;
 	int i=0;
 	for(i=0; i<n; i++) FreeList(G[i].adjList);
+	G = NULL;
 	return;
 }
 
-void printAdjList(struct list *head){
+/*void printAdjList(struct list *head){
 	struct list *temp = head;
 	for(;temp!=NULL; temp=temp->next){
 		printf(" v=%d, w=%d ", temp->v, temp->w);
 	}printf("\n");
-}
+}*/
 
 int main(){
 
 	char d, option; 
 	int i,V_size, flag=0, V_idx;
 	unsigned int u=0, v=0, w=0, a=0;
-	struct graph *G=NULL;
-	// struct priorityQ *Q;
-	// struct node *tree = NULL, *temp = NULL;
+	struct graph *G = NULL;
+	struct priorityQ *Q;
 	while((d=fgetc(stdin))!=EOF){
-		// assuming that the given list is valid preorder traversal
 		if(d == 'N'){
 			option = 'N';
-			if(G!=NULL)free_graph(V_size,G);
+			// free_graph(V_size,G);
 		}
-		// else if(d == 'B') option = 'B';
 		else if(d == 'E') option = 'E';
 		else if(d == '?') option = '?';
 		else if(d == 'D') option = 'D';
@@ -236,7 +216,7 @@ int main(){
 					else if(v!=0 && w==0) w = a;
 
 					if(v!=0 && w!=0){
-						G[v-1].adjList = adjInsert(G[V_idx].adjList, v, w);
+						G[V_idx].adjList = adjInsert(G[V_idx].adjList, v, w);
 						v=0; w=0;
 					}
 				}a = 0; // since only natural numbers are used
@@ -251,20 +231,18 @@ int main(){
 			switch(option){
 				case 'N':
 					V_size = a;
+					free_graph(V_size,G);
 					G = (struct graph*)malloc(V_size*sizeof(struct graph));
-					for(i=0; i<V_size; i++){
-						G[i].adjList = adjInsert(G[i].adjList, i+1, 0);
-					}
-					// Q = (struct priorityQ*)malloc(V_size*sizeof(struct priorityQ));
+					for(i=0; i<V_size; i++) G[i].adjList = adjInsert(G[i].adjList, i+1, 0);
+					Q = (struct priorityQ*)malloc(V_size*sizeof(struct priorityQ));
 					break;
 
 				case 'E':
-					printf("%d, %d\n",V_idx, flag);
 					if(v==0) v = a;
 					else if(v!=0 && w==0) w = a;
 					if(v!=0 && w!=0) G[V_idx].adjList = adjInsert(G[V_idx].adjList, v, w);
 					flag = 0;
-					printAdjList(G[V_idx].adjList);
+					// printAdjList(G[V_idx].adjList);
 					break;
 
 				case '?':
@@ -284,7 +262,7 @@ int main(){
 
 				default: break;
 			}
-			a=0; v=0; u=0; w=0; flag=0;
+			a=0; v=0; u=0; w=0;// flag=0;
 		}
 
 		else{
