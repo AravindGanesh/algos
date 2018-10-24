@@ -1,44 +1,25 @@
-/******************************************************************************
-• ‘N’ followed by number of vertices n ∈ N.
-• ‘E’ followed by a vertex and vertex-weight pairs that look like:
-u, v 1 , w(u, v 1 ), v 2 , w(u, v 2 ) · · · , v k , w(u, v k )
-This list gives the adjacency list of vertex u along with the respective edge weights.
-The list is given as a space-separated list.
-• ‘?’ followed by u, v ∈ [n] with a space separating them.
-• ‘D’ followed by a u ∈ [n].
-• ‘P’ followed by u, v ∈ [n] with a space separating them.
-////////////////////////////////////////////////////////////////////////////////
-• If input line started with ‘N’ or ‘E’, then no corresponding output.
-• If input line was “? u v”: Output w(u, v) if (u, v) ∈ E, −1 otherwise.
-• If input line was “D u”:
-Let v 1 , v 2 , . . . , v n be the order of vertices visited on a run of of Dijkstra’s algorithm
-from u (note that u = v 1 ). Let δ(u, v) denote the shortest path from u to v. Output
-a list of pairs: (v 1 , δ(u, v 1 )), . . . , (v n , δ(u, v n )). If δ(u, v) = ∞ then output −1 in its
-place. Use a space to separate v and δ(u, v) within a pair. Use a ‘\n’ between pairs.
-• If input line was “P u v”:
-If v is not reachable from u, output −1. Else output the shortest distance from u to
-v followed by a shortest path from u to v as a space-separated list of vertices starting
-with u.
-All output lines have to end with a ‘\n’ character.
-******************************************************************************/
-
 #include <stdio.h>
 #include <stdlib.h>
 
-//
+// linked list to store adjacency lists with weights 
 struct list{
 	unsigned int v, w;
 	struct list *next;
 };
 
-//
-struct graph{ // an array of this struct will represent my graph
+// an array of this struct will represent my graph
+struct graph{
 	struct list *adjList; 
 };
 
 // node of a priority Queue with vertex, parent and distance (in Dijkstra traversal)
 struct priorityQ{
-	unsigned int v, pi, d;
+	unsigned int v, d;
+};
+
+// array of this will store at index = v-1,  distance from source and parent of v 
+struct path{
+	unsigned int d, pi;
 };
 
 // function to swap two nodes of a priority Queue
@@ -48,7 +29,6 @@ void swap(struct priorityQ *a, struct priorityQ *b){
 	*b = temp;
 }
 
-// reference: CLRS
 // function to make the array to a min-heap (w.r.t distances)
 void HEAPIFY(int n, struct priorityQ *heap, int i){
 	int left_i = (2*i)+1, right_i = (2*i)+2, min_i = i;
@@ -68,16 +48,14 @@ struct priorityQ extract_min(int n, struct priorityQ *heap){
 	struct priorityQ min;
 	min.d = heap[0].d;
 	min.v = heap[0].v;
-	min.pi = heap[0].pi;
 	heap[0].d = heap[n-1].d;
 	heap[0].v = heap[n-1].v;
-	heap[0].pi = heap[n-1].pi;
 	n--;
 	HEAPIFY(n, heap, 0);
 	return min;
 }
 
-// decrease the distance of vertex v to value key  
+// decrease the distance at index i to value key  
 void decrease_key(int n, struct priorityQ *heap, int i, unsigned int key){
 	heap[i].d = key;
 	// restore min-heap property to the array
@@ -100,7 +78,7 @@ struct list *adjInsert(struct list *head, unsigned int v, unsigned int w){
 	return head;
 }
 
-// 
+// function to get weight of the edge between u and v
 unsigned int weight(struct graph *G, int n, unsigned int u, unsigned int v){
 	struct list *adju = NULL;
 	int i;
@@ -116,51 +94,57 @@ unsigned int weight(struct graph *G, int n, unsigned int u, unsigned int v){
 }
 
 // function prints Dijkstra traversal from source s
-void Dijkstra(struct graph *G, int n, unsigned int s){
+// Trick: -1 will be treated as ∞ since unsigned int is used
+// -1 will be printed wherever necessary as %d format specifier will be used
+// returns the struct with distances and parents of vertices w.r.t source
+struct path *Dijkstra(struct graph *G, int n, unsigned int s, int flag){
 	int i=0,j=0, m=n;
-	unsigned int distances[n];
 	unsigned int u, v, d;
+	struct path *P = (struct path*)malloc(n*sizeof(struct path));
 	struct priorityQ *Q = (struct priorityQ*)malloc(n*sizeof(struct priorityQ));
 	struct priorityQ qnode;
 	struct list *adju = NULL;
 	// intialize priority Q; set distances to ∞ and parents to 0
 	for(i=0; i<n; i++){
-		Q[i].d = -1;
-		Q[i].pi = 0;
 		Q[i].v = i+1; // vertcies are stored in ascending order in Q nodes
-		distances[i] = -1;
+		Q[i].d = -1;
+		P[i].d = -1;
+		P[i].pi = 0;
 	}
-	distances[s-1] = 0;
 	decrease_key(n, Q, s-1, 0);
-	// for(i=0; i<n; i++) printf(" x %d %d x ",Q[i].v, Q[i].d);
 	for(m=n; m>0; m--){
+
 		qnode = extract_min(m, Q);
 		u = qnode.v;
-		printf("%d %d\n",qnode.v, qnode.d);
+		if(flag == 0) printf("%d %d\n",qnode.v, qnode.d); 
+		P[u-1].d = qnode.d;
 		adju = G[u-1].adjList;
 		for(adju = adju->next; adju!=NULL; adju = adju->next){
 			v = adju->v;
 			for(j=0; j<m-1; j++){
 				if(Q[j].v == v){
 					d = Q[j].d;
+					P[v - 1].pi = u;
 					break;
 				}
 			}
-			if(qnode.d + adju->w < d){
+			if((qnode.d + adju->w) < d){
 				d = qnode.d + adju->w;
 				decrease_key(m-1, Q, j, d);
-				Q[j].pi = u;
 			}
 		}
 	}
+	return P;
 }
 
-// 
-void shortest_path(struct graph *G, int n, unsigned int src, unsigned int dest){
-
+// function to print the shortest path using parents w.r.t Dijkstra of source
+void shortest_path(struct path *P, unsigned int dest){
+	if(P[dest-1].pi == 0) return;
+	shortest_path(P, P[dest-1].pi);
+	printf("%d ", dest);
 }
 
-// function to free list after each line
+// function to free list 
 void FreeList(struct list *head){
 	struct list* temp;
 	while(head!=NULL){
@@ -170,7 +154,7 @@ void FreeList(struct list *head){
 	}head = NULL;
 }
 
-//
+// function to free graph 
 void free_graph(int n, struct graph *G){
 	if(G==NULL)return;
 	int i=0;
@@ -191,12 +175,12 @@ int main(){
 	char d, option; 
 	int i,V_size, flag=0, V_idx;
 	unsigned int u=0, v=0, w=0, a=0;
+	struct path *Path;
 	struct graph *G = NULL;
 	struct priorityQ *Q;
 	while((d=fgetc(stdin))!=EOF){
 		if(d == 'N'){
 			option = 'N';
-			// free_graph(V_size,G);
 		}
 		else if(d == 'E') option = 'E';
 		else if(d == '?') option = '?';
@@ -235,6 +219,7 @@ int main(){
 					G = (struct graph*)malloc(V_size*sizeof(struct graph));
 					for(i=0; i<V_size; i++) G[i].adjList = adjInsert(G[i].adjList, i+1, 0);
 					Q = (struct priorityQ*)malloc(V_size*sizeof(struct priorityQ));
+					Path = (struct path*)malloc(V_size*sizeof(struct path));
 					break;
 
 				case 'E':
@@ -253,16 +238,19 @@ int main(){
 
 				case 'P':
 					if(a!=0) v = a;
-					printf("P %d blah\n",v);
+					Path = Dijkstra(G, V_size, u, 1);
+					printf("%d %d ", Path[v-1].d, u);
+					shortest_path(Path, v);
+					printf("\n");
 					break;
 
 				case 'D':
-					Dijkstra(G, V_size, a);
+					Path = Dijkstra(G, V_size, a,  0);
 					break;
 
 				default: break;
 			}
-			a=0; v=0; u=0; w=0;// flag=0;
+			a=0; v=0; u=0; w=0;
 		}
 
 		else{
